@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "serenity-backend"
+version = "1.0.0"
+description = "Separated API and worker backend for Serenity X sync operations dashboard."
+requires-python = ">=3.11"
+dependencies = [
+  "boto3>=1.34",
+  "celery[redis]>=5.3",
+  "fastapi>=0.115",
+  "psycopg2-binary>=2.9",
+  "PyJWT>=2.8",
+  "python-multipart>=0.0.9",
+  "redis>=5.0",
+  "requests>=2.31",
+  "SQLAlchemy>=2.0",
+  "uvicorn[standard]>=0.30",
+]
+
+[project.optional-dependencies]
+test = [
+  "httpx>=0.27",
+  "pytest>=8.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

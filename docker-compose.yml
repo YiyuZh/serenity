@@ -1,0 +1,198 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-serenity}
+      POSTGRES_USER: ${POSTGRES_USER:-serenity}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env before running Docker Compose}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-serenity} -d ${POSTGRES_DB:-serenity}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    container_name: serenity-backend
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        PYTHON_IMAGE: ${PYTHON_IMAGE:-python:3.11-slim}
+        APT_MIRROR_HOST: ${APT_MIRROR_HOST:-}
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple}
+        PIP_EXTRA_INDEX_URL: ${PIP_EXTRA_INDEX_URL:-}
+        PIP_TRUSTED_HOST: ${PIP_TRUSTED_HOST:-}
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env before running Docker Compose}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env before running Docker Compose}
+      JWT_EXPIRES_MINUTES: ${JWT_EXPIRES_MINUTES:-720}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://serenity.zenithy.art,http://127.0.0.1:5173,http://localhost:5173}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-serenity}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env before running Docker Compose}@postgres:5432/${POSTGRES_DB:-serenity}
+      REDIS_URL: redis://redis:6379/0
+      ENABLE_TASK_ENQUEUE: "true"
+    ports:
+      - "127.0.0.1:${SERENITY_BACKEND_PORT:-8000}:8000"
+    expose:
+      - "8000"
+    networks:
+      - default
+      - shared_gateway
+    depends_on:
+      init-db:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  init-db:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        PYTHON_IMAGE: ${PYTHON_IMAGE:-python:3.11-slim}
+        APT_MIRROR_HOST: ${APT_MIRROR_HOST:-}
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple}
+        PIP_EXTRA_INDEX_URL: ${PIP_EXTRA_INDEX_URL:-}
+        PIP_TRUSTED_HOST: ${PIP_TRUSTED_HOST:-}
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env before running Docker Compose}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env before running Docker Compose}
+      JWT_EXPIRES_MINUTES: ${JWT_EXPIRES_MINUTES:-720}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://serenity.zenithy.art,http://127.0.0.1:5173,http://localhost:5173}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-serenity}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env before running Docker Compose}@postgres:5432/${POSTGRES_DB:-serenity}
+      REDIS_URL: redis://redis:6379/0
+      ENABLE_TASK_ENQUEUE: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["python", "-m", "app.cli", "init-db"]
+
+  worker:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        PYTHON_IMAGE: ${PYTHON_IMAGE:-python:3.11-slim}
+        APT_MIRROR_HOST: ${APT_MIRROR_HOST:-}
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple}
+        PIP_EXTRA_INDEX_URL: ${PIP_EXTRA_INDEX_URL:-}
+        PIP_TRUSTED_HOST: ${PIP_TRUSTED_HOST:-}
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env before running Docker Compose}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env before running Docker Compose}
+      JWT_EXPIRES_MINUTES: ${JWT_EXPIRES_MINUTES:-720}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://serenity.zenithy.art,http://127.0.0.1:5173,http://localhost:5173}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-serenity}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env before running Docker Compose}@postgres:5432/${POSTGRES_DB:-serenity}
+      REDIS_URL: redis://redis:6379/0
+      ENABLE_TASK_ENQUEUE: "true"
+    depends_on:
+      init-db:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["celery", "-A", "app.worker.celery_app", "worker", "--loglevel=INFO"]
+
+  beat:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        PYTHON_IMAGE: ${PYTHON_IMAGE:-python:3.11-slim}
+        APT_MIRROR_HOST: ${APT_MIRROR_HOST:-}
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple}
+        PIP_EXTRA_INDEX_URL: ${PIP_EXTRA_INDEX_URL:-}
+        PIP_TRUSTED_HOST: ${PIP_TRUSTED_HOST:-}
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env before running Docker Compose}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env before running Docker Compose}
+      JWT_EXPIRES_MINUTES: ${JWT_EXPIRES_MINUTES:-720}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://serenity.zenithy.art,http://127.0.0.1:5173,http://localhost:5173}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-serenity}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env before running Docker Compose}@postgres:5432/${POSTGRES_DB:-serenity}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      init-db:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["celery", "-A", "app.worker.celery_app", "beat", "--loglevel=INFO"]
+
+  frontend:
+    container_name: serenity-frontend
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:-node:22-alpine}
+        NGINX_IMAGE: ${NGINX_IMAGE:-nginx:1.27-alpine}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org/}
+    ports:
+      - "127.0.0.1:${SERENITY_FRONTEND_PORT:-5173}:80"
+    expose:
+      - "80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - default
+      - shared_gateway
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  shared_gateway:
+    external: true
+    name: ${SHARED_CADDY_NETWORK:-shared_gateway}

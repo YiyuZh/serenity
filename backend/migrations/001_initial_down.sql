@@ -1,0 +1,12 @@
+BEGIN;
+
+DROP TABLE IF EXISTS task_attempts;
+DROP TABLE IF EXISTS sync_runs;
+DROP TABLE IF EXISTS push_logs;
+DROP TABLE IF EXISTS push_targets;
+DROP TABLE IF EXISTS translation_jobs;
+DROP TABLE IF EXISTS media_assets;
+DROP TABLE IF EXISTS posts;
+DROP TABLE IF EXISTS source_accounts;
+
+COMMIT;

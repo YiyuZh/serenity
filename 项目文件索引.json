@@ -1,0 +1,77 @@
+{
+  "updated_at": "2026-06-12",
+  "project_root": "D:\\apps\\serenity",
+  "git_initialized": false,
+  "default_github_repo": "git@github.com:YiyuZh/serenity.git",
+  "production_domain": "serenity.zenithy.art",
+  "groups": [
+    {
+      "name": "root",
+      "files": [
+        { "path": ".dockerignore", "purpose": "Docker build context ignore rules" },
+        { "path": ".env.example", "purpose": "Environment variable template without real secrets" },
+        { "path": ".gitignore", "purpose": "Git ignore rules" },
+        { "path": "docker-compose.yml", "purpose": "Production and preview Docker Compose stack" },
+        { "path": "README.md", "purpose": "Project entrypoint and verification guide" },
+        { "path": "Serenity_X_Realtime_Sync_PRD_v0.1.md", "purpose": "Product requirements document" },
+        { "path": "任务记忆文档.md", "purpose": "Task memory and next-step state" },
+        { "path": "项目文件索引.md", "purpose": "Human-readable project file index" },
+        { "path": "项目文件索引.json", "purpose": "Machine-readable project file index" }
+      ]
+    },
+    {
+      "name": "ci",
+      "files": [
+        { "path": ".github/workflows/ci.yml", "purpose": "GitHub Actions verification workflow" }
+      ]
+    },
+    {
+      "name": "backend",
+      "files": [
+        { "path": "backend/Dockerfile", "purpose": "Backend image with non-root runtime and mirror args" },
+        { "path": "backend/pyproject.toml", "purpose": "Python package and test configuration" },
+        { "path": "backend/requirements.txt", "purpose": "Runtime dependencies" },
+        { "path": "backend/requirements-dev.txt", "purpose": "Test dependencies" },
+        { "path": "backend/app/config.py", "purpose": "Settings and production security validation" },
+        { "path": "backend/app/main.py", "purpose": "FastAPI app factory" },
+        { "path": "backend/app/cli.py", "purpose": "Operational CLI" },
+        { "path": "backend/app/api", "purpose": "HTTP routers, dependencies, schemas" },
+        { "path": "backend/app/application", "purpose": "Application services and sync pipeline" },
+        { "path": "backend/app/domain", "purpose": "Domain status enums and constants" },
+        { "path": "backend/app/infrastructure", "purpose": "Database, models, security, external clients" },
+        { "path": "backend/app/worker", "purpose": "Celery worker and beat tasks" },
+        { "path": "backend/migrations", "purpose": "SQL migration files" },
+        { "path": "backend/tests", "purpose": "Backend test suite" }
+      ]
+    },
+    {
+      "name": "frontend",
+      "files": [
+        { "path": "frontend/Dockerfile", "purpose": "Vue build and nginx runtime image" },
+        { "path": "frontend/nginx.conf", "purpose": "Static hosting, API proxy, security headers" },
+        { "path": "frontend/package.json", "purpose": "Frontend dependencies and scripts" },
+        { "path": "frontend/package-lock.json", "purpose": "Locked npm dependency graph" },
+        { "path": "frontend/tsconfig.json", "purpose": "TypeScript configuration" },
+        { "path": "frontend/vite.config.ts", "purpose": "Vite configuration" },
+        { "path": "frontend/src", "purpose": "Vue application source" }
+      ]
+    },
+    {
+      "name": "docs",
+      "files": [
+        { "path": "docs/database-design.md", "purpose": "Database design document" },
+        { "path": "docs/self-audit.md", "purpose": "Self-audit and verification report" },
+        { "path": "docs/上线变量卡.md", "purpose": "Deployment variable card" },
+        { "path": "docs/傻瓜式部署手册.md", "purpose": "Beginner deployment guide" },
+        { "path": "docs/下一环节执行清单.md", "purpose": "GitHub upload and server deployment checklist" }
+      ]
+    },
+    {
+      "name": "scripts",
+      "files": [
+        { "path": "scripts/verify-local.ps1", "purpose": "Local verification gate" },
+        { "path": "scripts/smoke-compose.ps1", "purpose": "Full Compose smoke test" }
+      ]
+    }
+  ]
+}

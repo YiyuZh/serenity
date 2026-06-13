@@ -1,0 +1,21 @@
+{
+  "name": "serenity-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@vitejs/plugin-vue": "5.0.5",
+    "vite": "5.4.11",
+    "vue": "3.4.38",
+    "vue-router": "4.4.5"
+  },
+  "devDependencies": {
+    "typescript": "5.5.4"
+  }
+}
